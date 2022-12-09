@@ -3,14 +3,13 @@ from torch import nn
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
-# implementation is borrowed from https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py
-# helpers
+# ViT implementation is borrowed from https://github.com/lucidrains/vit-pytorch/blob/main/vit_pytorch/vit.py
 
+# helpers
 def pair(t):
     return t if isinstance(t, tuple) else (t, t)
 
 # classes
-
 class PreNorm(nn.Module):
     def __init__(self, dim, fn):
         super().__init__()
@@ -81,7 +80,7 @@ class Transformer(nn.Module):
 
 class ViT(nn.Module):
     def __init__(self, *, image_size, patch_size, num_classes, dim, depth, heads, mlp_dim,
-                 pool = 'cls', channels = 3, dim_head = 64, dropout = 0., emb_dropout = 0., mode = 'train'):
+                 pool='cls', channels=3, dim_head=64, dropout=0., emb_dropout=0., mode='train', pretrained=False):
         super().__init__()
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(patch_size)
@@ -97,8 +96,11 @@ class ViT(nn.Module):
             nn.Linear(patch_dim, dim),
         )
 
+        self.pretrained = pretrained
+        # if self.pretrained is not True:
         self.pos_embedding = nn.Parameter(torch.randn(1, num_patches + 1, dim))
         self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
+
         self.dropout = nn.Dropout(emb_dropout)
 
         self.transformer = Transformer(dim, depth, heads, dim_head, mlp_dim, dropout)

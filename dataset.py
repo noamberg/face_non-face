@@ -19,15 +19,14 @@ class MITfaces(Dataset):
         # Read the csv file
         self.data_info = pd.read_csv(csv_path, header=None)
         # Second column contains the image paths
-        self.image_arr = np.asarray(self.data_info.iloc[1:, 0])
+        self.imgs = np.asarray(self.data_info.iloc[1:, 0])
         # Third column is the labels
-        self.label_arr = np.asarray(self.data_info.iloc[1:, 1])
-        # # Third column is for an operation indicator
-        # self.operation_arr = np.asarray(self.data_info.iloc[:, 2])
-        # Calculate len
+        self.labels = np.asarray(self.data_info.iloc[1:, 1])
+        # Calculate length of data set
         self.data_len = len(self.data_info.index)
-        self.imgs = self.image_arr
-        self.labels = self.label_arr
+        # self.imgs = self.image_arr
+        # self.labels = self.label_arr
+        # Normalize images and convert to tensors
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -36,49 +35,22 @@ class MITfaces(Dataset):
 
     def __getitem__(self, index):
         # Get image name from the pandas df
-        single_image_name = self.image_arr[index-1]
+        single_image_name = self.imgs[index-1]
+
         # Open image
         img_as_img = Image.open(single_image_name)
         img_as_img = img_as_img.resize((20, 20), Image.BILINEAR)
+        single_image_label = int(self.labels[index-1])
 
-        # Check if there is an operation
-        # operations = self.operations
-        # # If there is a resize operation
-        # if operations == 'resize':
-        #     # Resize image by Bilinear interpolation to 20x20
-        #     img_as_img = img_as_img.resize((20,20), Image.BILINEAR)
-        #     pass
-
-        # Get label(class) of the image based on the cropped pandas column
-        # Convert label to binary
-        single_image_label = int(self.label_arr[index - 1])
-        # if single_image_label == 'non_face':
-        #     single_image_label = 0
-        # else:
-        #     single_image_label = 1
-
-
-        # Augment image
-        # augimg_as_img = self.A_transform(image=np.array(img_as_img))['image']
-        # Transform image to tensor and normalize it
+        # Transform image into a normalized tensor
         img_as_img = self.transform(img_as_img)
-
-        # # Save image
-        # if not os.path.exists('augmented'):
-        #     os.makedirs('augmented')
-        #
-        # if index % 10 == 0:
-        #     large_augimage = cv2.resize(augimg_as_img, (200, 200), interpolation=cv2.INTER_LINEAR)
-        #     large_image = cv2.resize(np.array(img_as_img), (200, 200), interpolation=cv2.INTER_LINEAR)
-        #     hstack = np.hstack([large_image,large_augimage])
-        #     cv2.imwrite('augmented/{}.jpg'.format(index), hstack)
 
         return (img_as_img, single_image_label, single_image_name)
 
     def __len__(self):
         return self.data_len
 
-
+# Train dataset with balanced batch sampler
 class MITtrain(Dataset):
     def __init__(self, csv_path,train_indices):
         """
@@ -121,32 +93,18 @@ class MITtrain(Dataset):
         img_as_img = Image.open(single_image_name)
         img_as_img = img_as_img.resize((20, 20), Image.BILINEAR)
 
-        # Check if there is an operation
-        # operations = self.operations
-        # # If there is a resize operation
-        # if operations == 'resize':
-        #     # Resize image by Bilinear interpolation to 20x20
-        #     img_as_img = img_as_img.resize((20,20), Image.BILINEAR)
-        #     pass
-
         # Get label(class) of the image based on the cropped pandas column
-        # Convert label to binary
         single_image_label = int(self.labels[index])
-        # if single_image_label == 'non_face':
-        #     single_image_label = 0
-        # else:
-        #     single_image_label = 1
-
 
         # Augment image
         augimg_as_img = self.A_transform(image=np.array(img_as_img))['image']
-        # Transform image to tensor and normalize it
+
+        # Transform image into a normalized tensor
         augimg_as_tensor = self.transform(augimg_as_img)
 
-        # Save image
+        # Save horizontal stacked original image with their augmentations for tracking purposes during training
         if not os.path.exists('augmented'):
             os.makedirs('augmented')
-
         if index % 10 == 0:
             large_augimage = cv2.resize(augimg_as_img, (200, 200), interpolation=cv2.INTER_LINEAR)
             large_image = cv2.resize(np.array(img_as_img), (200, 200), interpolation=cv2.INTER_LINEAR)
@@ -158,6 +116,7 @@ class MITtrain(Dataset):
     def __len__(self):
         return self.data_len
 
+# Validation dataset
 class MITval(Dataset):
     def __init__(self, csv_path,indices):
         """
@@ -173,9 +132,7 @@ class MITval(Dataset):
         self.imgs = np.asarray(self.data_info.iloc[1:, 0])[indices]
         # Third column is the labels
         self.labels = np.asarray(self.data_info.iloc[1:, 1])[indices]
-        # # Third column is for an operation indicator
-        # self.operation_arr = np.asarray(self.data_info.iloc[:, 2])
-        # Calculate len
+        # Calculate length of data set
         self.data_len = self.imgs.shape[0]
         # Transforms
         self.transform = transforms.Compose([
@@ -191,15 +148,12 @@ class MITval(Dataset):
         img_as_img = Image.open(single_image_name)
         img_as_img = img_as_img.resize((20, 20), Image.BILINEAR)
         img_as_tensor = self.transform(img_as_img)
-
         single_image_label = int(self.labels[index])
 
         return (img_as_tensor, single_image_label )
 
     def __len__(self):
         return self.data_len
-
-
 
 if __name__ == "__main__":
     # Call dataset

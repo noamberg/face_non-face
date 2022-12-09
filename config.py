@@ -7,25 +7,19 @@ class Config():
     random_seed = 1
     weight_decay= 1e-4
     seed = 100
-    batch_size = 16
+    batch_size = 64
     test_batch_size = 5000
     num_workers = 4
     train_split = 0.8
     val_split = 0.2
     image_size = 20
     patch_size = 4
-    test_sigmoid_threshold = 0.2
-    train_sigmoid_threshold = [0.2, 0.5, 0.8]
+    train_sigmoid_threshold = [0.1, 0.2, 0.3]
     shuffle_dataset = True
     shuffle = True
 
-    # cometml settings
-    api_key = "c3qk7qgByuTxwIjTdsG261cy9"
-    project_name = "face/non_face"
-    workspace = "noamberg"
-    models = ['ResNet50','ViT']
-
-    # model settings
+    # ViT hyper-parameters
+    models = ['ViT']
     emb_dropout = 0
     dropout = 0
     mlp_expand = 4
@@ -33,7 +27,12 @@ class Config():
     depth = 6
     dim = 384
     mlp_dim = 1536
+    pretrained = True
+    pretrained_model_path = r'C:\Users\Noam\PycharmProjects\Jubaan\logs\09_12_2022____19_09_57--\best_model_epoch74.pth'
 
-    test_dir = r'C:\Users\Noam\PycharmProjects\Jubaan\logs\08_12_2022____15_41_22'
-
+    # Test hyper-parameters and settings
+    test_model = 'ResNet18'
+    test_dir = r'C:\Users\Noam\PycharmProjects\Jubaan\logs\09_12_2022____18_12_39--'
+    test_best_model = 'best_model_epoch64.pth'
+    test_sigmoid_threshold = 0.2
 
