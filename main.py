@@ -1,3 +1,5 @@
+import csv
+
 import numpy as np
 import wandb
 from torch.utils.data import SubsetRandomSampler
@@ -8,7 +10,7 @@ import datetime
 import os
 from dataset import MITfaces, MITtrain, MITval
 from model import ViT
-from utils import mkdir_if_missing, generate_seed, remove_last_index
+from utils import mkdir_if_missing, generate_seed, remove_last_index, append_results_to_csv
 import torch.nn as nn
 from trainer import validate, train
 import timm
@@ -84,6 +86,8 @@ def main(args):
                 # network2.fc = nn.Linear(512, 1).to(device)
             elif model == 'ResNet50':
                 network = timm.create_model('resnet50', pretrained=True, num_classes=1).to(device)
+            elif model == 'ViT-B_16':
+                network = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=1).to(device)
 
             # Set an optimizer
             optimizer = torch.optim.SGD(network.parameters(),
@@ -92,41 +96,56 @@ def main(args):
                                         weight_decay=args.weight_decay
                                         )
             # Set a scheduler
-            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
-                                                                   T_max=(args.n_epochs * len(training_dataloader)),
-                                                                   eta_min=0, last_epoch=-1)
-            # Set loss function
+            # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
+            #                                                        T_max=(args.n_epochs - args.warmup_epochs),
+            #                                                        eta_min=0, last_epoch=-1)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.97)
+
+            # Set a loss function
             criterion = nn.BCEWithLogitsLoss()
 
+            # Save the config file
+            with open(os.path.join(addr, f'{model}_{threshold}.txt'), 'w') as f:
+                for key, value in vars(args).items():
+                    f.write('%s:%s' % (key, value))
+
+            # T_max = (args.n_epochs * len(training_dataloader)),
             # ----------
             #  Training
             # ----------
+            best_balanced_acc = 0.0
             best_acc = 0.0
             best_epoch = 0
             for epoch in range(args.n_epochs):
                 # Train the model
-                train_loss, train_acc = train(training_dataloader, network, threshold, criterion, optimizer,
-                                              scheduler, epoch, addr, device)
+                train_results_dict = train(training_dataloader,network,threshold,
+                                           criterion,optimizer,scheduler,epoch,addr,device)
 
                 # Validate the model
                 print('\n- Validation -\n')
-                val_loss, val_accuracy, val_balanced_acc = validate(validation_dataloder,
-                                                                    network, threshold, criterion,
-                                                                    epoch, addr, device, best_acc,
-                                                                    best_epoch
-                                                                    )
-                # Create results dictionary
-                results = {train_loss, train_acc, val_loss, val_accuracy, val_balanced_acc}
+                val_results_dict = validate(validation_dataloder, network, threshold, criterion, epoch, addr, device)
 
-                # Save best validation accuracy
-                if val_accuracy > best_acc:
-                    best_acc = val_accuracy
+                #Save the best model
+                if val_results_dict['val_bal_acc'] > best_balanced_acc:
+                    best_balanced_acc = val_results_dict['val_bal_acc']
+                    # best_acc = val_acc
                     best_epoch = epoch
+                    torch.save(network.state_dict(), os.path.join(addr, f'Best_{model}_{threshold}_{epoch}.pth'))
 
+                append_results_to_csv(train_results_dict, val_results_dict, addr, model, threshold, epoch)
+
+                if epoch >= args.warmup_epochs:
+                    scheduler.step()
+                # Save best validation accuracy
+                # if val_accuracy > best_acc:
+                #     best_acc = val_accuracy
+                #     best_epoch = epoch
             run.finish()
-            print('Finished {} with sigmoid threshold {}\n'.format(model, threshold))
-            print('Results: {} train_loss, {} train_acc, {} val_loss, {} val_accuracy, {} val_balanced_acc'.
-                  format(*results))
+            print('Finished to train {} with sigmoid threshold {}\n'.format(model, threshold))
+            # print('Train Results: Loss: {:.4f} Acc: {:.4f} Balanced Acc: {:.4f} PPV: {:.4f}'
+            #       .format(train_loss, train_acc, train_balanced_acc, train_PPV))
+            # print('Val Results: Loss: {:.4f} Acc: {:.4f} Balanced Acc: {:.4f} PPV: {:.4f}'
+            #       .format(val_loss, val_acc, val_balanced_acc, val_PPV))
 
         print('Finished {}'.format(model))
 

@@ -6,7 +6,7 @@ import os
 import torch
 import torch.nn as nn
 from utils import AverageMeter, CountMeter, calc_accuracy, convert_to_array, create_dir, plot_roc_curve, \
-    plot_pr_curve, calc_metrics, calc_balanced_accuracy, convert_2Dlists_into_2Darray
+    plot_pr_curve, calc_metrics, calc_balanced_accuracy, convert_2Dlists_into_2Darray, plot_sensitivity_specificity
 
 args= Config()
 torch.set_printoptions(precision=2, sci_mode=False)
@@ -71,6 +71,7 @@ def test(data_loader, model, device):
                 plots_save_path = create_dir(os.path.join(args.test_dir, 'test_plots'))
                 plot_roc_curve(y_trues, y_preds, plots_save_path, epoch=0)
                 plot_pr_curve(y_trues, y_preds, plots_save_path, epoch=0)
+                plot_sensitivity_specificity(y_trues, y_preds, plots_save_path, epoch=0)
 
                 # Save t-SNE and PCA plots, Calcuate balanced accuracy and save results to csv
                 save_pca_plot(all_embeddings, y_trues, save_path=args.test_dir)

@@ -142,14 +142,51 @@ def save_confusion_matrix(cm, save_path, test_sigmoid_threshold):
     plt.savefig(os.path.join(save_path, 'confusion_matrix_test_{}.png'.format(test_sigmoid_threshold)))
     plt.close()
 
+# Save TNR TPR curve
+def TNR_TPR_curve(y_trues,y_preds,save_path,epoch):
+    from sklearn import metrics
+    thresholds = np.linspace(0,0.9,num=10)
+    import matplotlib.pyplot as plt
+    TNR = []
+    TPR = []
+    for threshold in thresholds:
+        y_preds_thresholded = (y_preds > threshold).astype(int)
+        cm = metrics.confusion_matrix(y_trues, y_preds_thresholded)
+        TN, FP, FN, TP = cm.ravel()
+        TNR.append(TN / (TN + FP))
+        TPR.append(TP / (TP + FN))
+
+    plt.figure()
+    plt.plot(TNR,TPR)
+    plt.title('Sensitivity Specificity Curve')
+    plt.xlabel('Specificity')
+    plt.ylabel('Sensitivity')
+
+    auc = metrics.auc(TNR,TPR)
+    plt.legend(['AUC = {:.3f}'.format(auc)])
+    plt.savefig(os.path.join(save_path, 'sensitivity_specificity_curve_{}.png'.format(epoch)))
+    plt.close()
+
+# Append results to csv file
+def append_results_to_csv(train_results_dict, val_results_dict, addr, model, threshold, epoch):
+    with open(os.path.join(addr, f'{model}_{threshold}_results.csv'), 'a', newline='') as f:
+        writer = csv.writer(f)
+        if epoch == 0:
+            writer.writerow(['mode', 'epoch', 'loss', 'accuracy',
+                             'balanced_acc', 'TNR', 'TPR', 'PPV', 'F1'])
+        writer.writerow(train_results_dict.values())
+        writer.writerow(val_results_dict.values())
+
+
 # Calculate confusion matrix and its metrics
-def calc_metrics(y_trues, y_preds, save_path, test_sigmoid_threshold):
+def calc_metrics(y_trues, y_preds, sigmoid_threshold, save_path=None):
     # Calculate metrics
     from sklearn import metrics
     confusion_matrix = metrics.confusion_matrix(y_trues, y_preds)
-    save_confusion_matrix(confusion_matrix, save_path, test_sigmoid_threshold)
-    TN, FP, FN, TP = confusion_matrix.ravel()
+    if save_path is not None:
+        save_confusion_matrix(confusion_matrix, save_path, sigmoid_threshold)
 
+    TN, FP, FN, TP = confusion_matrix.ravel()
     # Sensitivity, hit rate, recall, or true positive rate
     TPR = TP / (TP + FN)
     # Specificity or true negative rate
@@ -168,6 +205,12 @@ def calc_metrics(y_trues, y_preds, save_path, test_sigmoid_threshold):
     F1 = 2 * PPV * TPR / (PPV + TPR)
 
     return TNR, TPR, PPV, F1
+
+def log_results_to_csv(save_path, epoch, train_loss, train_acc, val_loss, val_acc, test_loss, test_acc, test_sigmoid_threshold, TNR, TPR, PPV, F1):
+    with open(os.path.join(save_path, 'results.csv'), 'a',newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([epoch, train_loss, train_acc, val_loss, val_acc, test_loss, test_acc, test_sigmoid_threshold, TNR, TPR, PPV, F1])
+        f.close()
 
 
 # def log_curves(TNRs, TPRs, PPVs, epoch, cometml_experiment):
