@@ -99,7 +99,7 @@ def main(args):
             # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
             #                                                        T_max=(args.n_epochs - args.warmup_epochs),
             #                                                        eta_min=0, last_epoch=-1)
-            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.97)
+            scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step, gamma=0.97)
 
             # Set a loss function
             criterion = nn.BCEWithLogitsLoss()
@@ -109,10 +109,7 @@ def main(args):
                 for key, value in vars(args).items():
                     f.write('%s:%s' % (key, value))
 
-            # T_max = (args.n_epochs * len(training_dataloader)),
-            # ----------
-            #  Training
-            # ----------
+            best_TPR = 0.0
             best_balanced_acc = 0.0
             best_acc = 0.0
             best_epoch = 0
@@ -126,9 +123,8 @@ def main(args):
                 val_results_dict = validate(validation_dataloder, network, threshold, criterion, epoch, addr, device)
 
                 #Save the best model
-                if val_results_dict['val_bal_acc'] > best_balanced_acc:
+                if val_results_dict['val_TPR'] > best_TPR:
                     best_balanced_acc = val_results_dict['val_bal_acc']
-                    # best_acc = val_acc
                     best_epoch = epoch
                     torch.save(network.state_dict(), os.path.join(addr, f'Best_{model}_{threshold}_{epoch}.pth'))
 

@@ -164,8 +164,6 @@ def train(data_loader, model, threshold, criterion, optimizer,scheduler, epoch,a
         # step_counter = epoch * total_batches + batch_idx
         step_counter += 1
 
-        wandb.log({'lr': optimizer.param_groups[0]['lr']}, step=step_counter)
-
         if batch_idx % args.log_interval == 0:
             print('\nTrain Epoch: {} [{}/{}]\tLoss: {:.6f}\tBatch Accuracy: {:.3f}'.format(
                 epoch, (batch_idx + 1) * args.batch_size, total_data, loss.item(), acc))
@@ -180,6 +178,7 @@ def train(data_loader, model, threshold, criterion, optimizer,scheduler, epoch,a
             train_TNR, train_TPR, train_PPV, train_F1 = \
                 calc_metrics(y_trues_tr, y_preds_thresh_tr, args.train_sigmoid_threshold)
             wandb.log({'train/Loss': losses.avg, 'train/Accuracy': accuracy.avg, 'train/Balanced Accuracy': train_bal_acc})
+            wandb.log({'lr': optimizer.param_groups[0]['lr']})
 
             print('\nTrain Epoch: {} [{}/{}]\tLoss: {:.6f}\tBatch Accuracy: {:.3f}'.format(
                 epoch, batch_idx * args.batch_size + last_batch, total_data, loss.item(), acc))

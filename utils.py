@@ -177,7 +177,6 @@ def append_results_to_csv(train_results_dict, val_results_dict, addr, model, thr
         writer.writerow(train_results_dict.values())
         writer.writerow(val_results_dict.values())
 
-
 # Calculate confusion matrix and its metrics
 def calc_metrics(y_trues, y_preds, sigmoid_threshold, save_path=None):
     # Calculate metrics
@@ -212,7 +211,6 @@ def log_results_to_csv(save_path, epoch, train_loss, train_acc, val_loss, val_ac
         writer.writerow([epoch, train_loss, train_acc, val_loss, val_acc, test_loss, test_acc, test_sigmoid_threshold, TNR, TPR, PPV, F1])
         f.close()
 
-
 # def log_curves(TNRs, TPRs, PPVs, epoch, cometml_experiment):
 #         # Convert metrics to numpy array
 #         TNRs = TNRs.prevs
@@ -234,6 +232,7 @@ def log_results_to_csv(save_path, epoch, train_loss, train_acc, val_loss, val_ac
 #     cometml_experiment.log_curve(f"roc-curve-class", tpr, fpr, step=epoch)
 
 # Plot and save the ROC curve
+
 def plot_roc_curve(y_trues, y_preds, save_path, epoch):
     # Calculate metrics
     from sklearn import metrics

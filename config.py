@@ -16,10 +16,12 @@ class Config():
     train_sigmoid_threshold = [0.1]
     shuffle_dataset = True
     shuffle = True
-    warmup_epochs = 1
+    warmup_epochs = 0
+    step = 1
     log_save_interval = 5
 
-    models = ['ResNet18']
+
+    models = ['ResNet50']
 
     # ViT hyper-parameters
     emb_dropout = 0.1
@@ -36,8 +38,8 @@ class Config():
 
     # Test hyper-parameters and settings
     test_model = 'ResNet50'
-    test_dir = r'C:\Users\Noam\PycharmProjects\Jubaan\logs\10_12_2022____09_38_51'
+    test_dir = r'C:\Users\Noam\PycharmProjects\Jubaan\logs\10_12_2022____09_38_51----'
     test_best_model = 'model_epoch400.pth'
-    test_sigmoid_threshold = 0.2
+    test_sigmoid_threshold = 0.5
     test_batch_size = 5000
 

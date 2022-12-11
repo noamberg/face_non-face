@@ -47,11 +47,15 @@ def main():
     elif args.test_model == 'ResNet50':
         network = timm.create_model('resnet50', pretrained=False, num_classes=1).to(device)
 
+    criterion = nn.BCEWithLogitsLoss()
+
     # Load best model
     network.load_state_dict(torch.load(os.path.join(args.test_dir, args.test_best_model)))
 
     # Test the model
-    accuracy, metrics_dict = test(test_dataloder, network, device)
+    accuracy, metrics_dict = test(test_dataloder, network, criterion, device)
+
+
 
     # Print the results
     print('Test Accuracy: {:.4f}'.format(accuracy))
