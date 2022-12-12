@@ -1,6 +1,5 @@
 import csv
 import glob
-import comet_ml
 import numpy as np
 import os
 import errno
@@ -33,7 +32,7 @@ def generate_seed(num):
     torch.manual_seed(num)
     torch.cuda.manual_seed(num)
 
-# Creare a list of all the files in the directory
+# Create a list of all the files in the directory
 def createFileList(myDir, format='.jpg'):
     fileList = []
     print(myDir)
@@ -44,7 +43,7 @@ def createFileList(myDir, format='.jpg'):
                 fileList.append(fullName)
     return fileList
 
-# Convert pgm iamges to jpg images
+# Convert pgm images to jpg images
 def convert_pgm_to_jpg(file_path):
     img = Image.open(file_path)
     img = img.convert("RGB")
@@ -60,17 +59,6 @@ def append_line_to_csv(csv_path,filename,filepath,label,height,width,format,mode
 # Flatten a list of lists
 def flatten(t):
     return [item for sublist in t for item in sublist]
-
-# Plot distribution of the dataset
-def plot_epoch_distribution(epoch_distribution, epoch, save_path):
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.plot(epoch_distribution)
-    plt.title('Epoch Distribution')
-    plt.xlabel('Epoch')
-    plt.ylabel('Number of Samples')
-    plt.savefig(os.path.join(save_path, 'epoch_distribution_{}.png'.format(epoch)))
-    plt.close()
 
 # Calculate average of a list
 def Average(lst):
@@ -95,22 +83,6 @@ class CountMeter(object):
 
     def __len__(self):
         return len(self.prevs)
-
-class CountMeterVectors(object):
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.prevs = []
-
-    def update(self, val, n=1):
-        self.val = val
-        self.prevs.append(val)
-
-    def __len__(self):
-        return len(self.prevs)
-
 
 # Compute averages
 class AverageMeter(object):
@@ -142,7 +114,7 @@ def save_confusion_matrix(cm, save_path, test_sigmoid_threshold):
     plt.savefig(os.path.join(save_path, 'confusion_matrix_test_{}.png'.format(test_sigmoid_threshold)))
     plt.close()
 
-# Save TNR TPR curve
+# Create and save TNR TPR curve
 def TNR_TPR_curve(y_trues,y_preds,save_path,epoch):
     from sklearn import metrics
     thresholds = np.linspace(0,0.9,num=10)
@@ -211,28 +183,6 @@ def log_results_to_csv(save_path, epoch, train_loss, train_acc, val_loss, val_ac
         writer.writerow([epoch, train_loss, train_acc, val_loss, val_acc, test_loss, test_acc, test_sigmoid_threshold, TNR, TPR, PPV, F1])
         f.close()
 
-# def log_curves(TNRs, TPRs, PPVs, epoch, cometml_experiment):
-#         # Convert metrics to numpy array
-#         TNRs = TNRs.prevs
-#         TNRs = np.array(flatten(TNRs))
-#         TPRs = TPRs.prevs
-#         TPRs = np.array(flatten(TPRs))
-#         PPVs = PPVs.prevs
-#         PPVs = np.array(flatten(PPVs))
-#         # Log  pr, roc, TNR_TPR curves to Comet.ml
-#         cometml_experiment.log_curve(f"pr-curve", TPRs, PPVs, step=epoch)
-#         cometml_experiment.log_curve(f"roc-curve-class", TPRs, PPVs, step=epoch)
-#         cometml_experiment.log_curve(f"TNR_TPR-curve-class", TNRs, TPRs, step=epoch)
-
-# def log_roc_curve(y_trues, y_preds, epoch, cometml_experiment):
-#     # Calculate metrics
-#     from sklearn import metrics
-#     fpr, tpr, thresholds = metrics.roc_curve(y_trues, y_preds)
-#     # Log  pr, roc, TNR_TPR curves to Comet.ml
-#     cometml_experiment.log_curve(f"roc-curve-class", tpr, fpr, step=epoch)
-
-# Plot and save the ROC curve
-
 def plot_roc_curve(y_trues, y_preds, save_path, epoch):
     # Calculate metrics
     from sklearn import metrics
@@ -248,13 +198,6 @@ def plot_roc_curve(y_trues, y_preds, save_path, epoch):
     plt.legend(['AUC = {:.4f}'.format(auc_roc)])
     plt.savefig(os.path.join(save_path, 'roc_curve_{}.png'.format(epoch)))
     plt.close()
-
-# def log_pr_curve(y_trues, y_preds, epoch, cometml_experiment):
-#     # Calculate metrics
-#     from sklearn import metrics
-#     precision, recall, thresholds = metrics.precision_recall_curve(y_trues, y_preds)
-#     # Log  pr, roc, TNR_TPR curves to Comet.ml
-#     cometml_experiment.log_curve(f"pr-curve", recall, precision, step=epoch)
 
 # Plot and save the PR curve
 def plot_pr_curve(y_trues, y_preds, save_path, epoch):

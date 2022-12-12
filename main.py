@@ -1,18 +1,16 @@
-import csv
-
-import numpy as np
-import wandb
+from utils import mkdir_if_missing, generate_seed, remove_last_index, append_results_to_csv
 from torch.utils.data import SubsetRandomSampler
 from balancedBatchSampler import BalancedBatchSampler
+from dataset import MITfaces, MITtrain, MITval
+from trainer import validate, train
+import numpy as np
+import wandb
 from config import Config
 import torch
 import datetime
 import os
-from dataset import MITfaces, MITtrain, MITval
 from model import ViT
-from utils import mkdir_if_missing, generate_seed, remove_last_index, append_results_to_csv
 import torch.nn as nn
-from trainer import validate, train
 import timm
 
 def main(args):
@@ -61,11 +59,13 @@ def main(args):
             train_dataset = MITtrain(csv_path='./data/train/train2.csv', train_indices=train_indices)
             val_dataset = MITval(csv_path='./data/train/train2.csv', indices=val_indices)
 
+            # Set 50%-50% batch sampler and create train dataloader
             training_dataloader = \
                 torch.utils.data.DataLoader(train_dataset,
                                             sampler=BalancedBatchSampler(train_dataset, labels=train_dataset.labels),
-                                            batch_size=args.batch_size
-                                            )
+                                            batch_size=args.batch_size, num_workers=args.num_workers)
+
+            # Create validation dataloader
             validation_dataloder = torch.utils.data.DataLoader(val_dataset, shuffle=True, batch_size=args.batch_size)
 
             # Create the model
@@ -82,12 +82,9 @@ def main(args):
                 ).to(device)
             elif model == 'ResNet18':
                 network = timm.create_model('resnet18', pretrained=True, num_classes=1).to(device)
-                # network2 = torchvision.models.resnet18(pretrained=True).to(device)
-                # network2.fc = nn.Linear(512, 1).to(device)
             elif model == 'ResNet50':
                 network = timm.create_model('resnet50', pretrained=True, num_classes=1).to(device)
-            elif model == 'ViT-B_16':
-                network = timm.create_model('vit_base_patch16_224', pretrained=True, num_classes=1).to(device)
+
 
             # Set an optimizer
             optimizer = torch.optim.SGD(network.parameters(),
@@ -96,53 +93,42 @@ def main(args):
                                         weight_decay=args.weight_decay
                                         )
             # Set a scheduler
-            # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer,
-            #                                                        T_max=(args.n_epochs - args.warmup_epochs),
-            #                                                        eta_min=0, last_epoch=-1)
             scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.step, gamma=0.97)
 
             # Set a loss function
             criterion = nn.BCEWithLogitsLoss()
 
-            # Save the config file
+            # Save the current config file to log folder
             with open(os.path.join(addr, f'{model}_{threshold}.txt'), 'w') as f:
                 for key, value in vars(args).items():
                     f.write('%s:%s' % (key, value))
 
             best_TPR = 0.0
-            best_balanced_acc = 0.0
-            best_acc = 0.0
-            best_epoch = 0
             for epoch in range(args.n_epochs):
                 # Train the model
-                train_results_dict = train(training_dataloader,network,threshold,
-                                           criterion,optimizer,scheduler,epoch,addr,device)
-
+                print('\n-Train-\n')
+                train_results_dict = train(training_dataloader,network,threshold, criterion,
+                                           optimizer,scheduler,epoch,addr,device)
                 # Validate the model
-                print('\n- Validation -\n')
-                val_results_dict = validate(validation_dataloder, network, threshold, criterion, epoch, addr, device)
+                print('\n-Validation-\n')
+                val_results_dict = validate(validation_dataloder, network, threshold, criterion,
+                                            epoch, addr, device)
 
                 #Save the best model
                 if val_results_dict['val_TPR'] > best_TPR:
-                    best_balanced_acc = val_results_dict['val_bal_acc']
+                    best_TPR = val_results_dict['val_TPR']
                     best_epoch = epoch
-                    torch.save(network.state_dict(), os.path.join(addr, f'Best_{model}_{threshold}_{epoch}.pth'))
+                    torch.save(network.state_dict(), os.path.join(addr, f'Best_{model}_{threshold}.pth'))
 
+                # Append train and validation results to csv log file
                 append_results_to_csv(train_results_dict, val_results_dict, addr, model, threshold, epoch)
 
+                # Schedule the learning rate, use warmup for the first 5 epochs
                 if epoch >= args.warmup_epochs:
                     scheduler.step()
-                # Save best validation accuracy
-                # if val_accuracy > best_acc:
-                #     best_acc = val_accuracy
-                #     best_epoch = epoch
+
             run.finish()
             print('Finished to train {} with sigmoid threshold {}\n'.format(model, threshold))
-            # print('Train Results: Loss: {:.4f} Acc: {:.4f} Balanced Acc: {:.4f} PPV: {:.4f}'
-            #       .format(train_loss, train_acc, train_balanced_acc, train_PPV))
-            # print('Val Results: Loss: {:.4f} Acc: {:.4f} Balanced Acc: {:.4f} PPV: {:.4f}'
-            #       .format(val_loss, val_acc, val_balanced_acc, val_PPV))
-
         print('Finished {}'.format(model))
 
 
@@ -151,4 +137,4 @@ if __name__ == '__main__':
     main(args)
     print('Finished.')
 
-# End of file
+

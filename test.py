@@ -16,10 +16,12 @@ def main():
     device = torch.device("cuda:0" if use_cuda else "cpu")
     print('Using device:', device)
 
+    # Create dataset from test csv file
     test_dataset = MITfaces(csv_path='./data/test/test2.csv')
     dataset_size = len(test_dataset)
     indices = list(range(dataset_size))
 
+    # Shuffle indices
     if args.shuffle_dataset:
         np.random.seed(args.seed)
         np.random.shuffle(indices)
@@ -42,11 +44,10 @@ def main():
         ).to(device)
     elif args.test_model == 'ResNet18':
         network = timm.create_model('resnet18', pretrained=False, num_classes=1).to(device)
-        # network2 = torchvision.models.resnet18(pretrained=True).to(device)
-        # network2.fc = nn.Linear(512, 1).to(device)
     elif args.test_model == 'ResNet50':
         network = timm.create_model('resnet50', pretrained=False, num_classes=1).to(device)
 
+    # Set loss function
     criterion = nn.BCEWithLogitsLoss()
 
     # Load best model
@@ -54,8 +55,6 @@ def main():
 
     # Test the model
     accuracy, metrics_dict = test(test_dataloder, network, criterion, device)
-
-
 
     # Print the results
     print('Test Accuracy: {:.4f}'.format(accuracy))
