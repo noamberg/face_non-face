@@ -23,7 +23,7 @@ def main():
 
     # Shuffle indices
     if args.shuffle_dataset:
-        np.random.seed(args.seed)
+        np.random.seed(args.random_seed)
         np.random.shuffle(indices)
 
     # Set sampler and dataloader

@@ -106,7 +106,7 @@ def pca_plot(projected, indices, save_path, title):
     import matplotlib.pyplot as plt
     import plotly.express as px
     plt.figure()
-    fig = px.scatter(projected, x=0, y=1, color=indices)
+    # fig = px.scatter(projected, x=0, y=1, color=indices)
     plt.scatter(projected[indices, 0], projected[indices, 1],cmap=plt.cm.get_cmap('coolwarm', 10))  # Greens,
     plt.xlabel('component 1')
     plt.ylabel('component 2')
@@ -123,10 +123,12 @@ def save_pca_plot(embeddings, y_trues, y_preds, filepaths, save_path):
     FN_indices = np.where((y_trues != y_preds) & (y_preds == 0))[0]
     FP_indices = np.where((y_trues != y_preds) & (y_preds == 1))[0]
     TP_indices = np.where((y_trues == y_preds) & (y_preds == 1))[0]
+    TN_indices = np.where((y_trues == y_preds) & (y_preds == 0))[0]
 
     pca_plot(projected, FN_indices, save_path, title='FN')
     pca_plot(projected, FP_indices, save_path, title='FP')
     pca_plot(projected, TP_indices, save_path, title='TP')
+    pca_plot(projected, TN_indices, save_path, title='TN')
 
 # Save FP and FN images paths of test set to csv
 def batch_to_csv(batch_filepaths, y_trues, y_preds, save_path, batch_idx):

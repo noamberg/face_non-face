@@ -21,7 +21,7 @@ def main(args):
             run = wandb.init(project="face_non-faces", entity="noamberg", reinit=True)
 
             # Generate seeds for reproducibility
-            generate_seed(args.seed)
+            generate_seed(args.random_seed)
 
             # Set the logger
             now = datetime.datetime.now()
@@ -49,7 +49,7 @@ def main(args):
             indices = list(range(dataset_size))
             split = int(np.floor(args.val_split * dataset_size))
             if args.shuffle_dataset:
-                np.random.seed(args.seed)
+                np.random.seed(args.random_seed)
                 np.random.shuffle(indices)
 
             train_indices, val_indices = indices[split:], indices[:split]

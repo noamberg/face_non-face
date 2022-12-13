@@ -117,7 +117,7 @@ def save_confusion_matrix(cm, save_path, test_sigmoid_threshold):
 # Create and save TNR TPR curve
 def TNR_TPR_curve(y_trues,y_preds,save_path,epoch):
     from sklearn import metrics
-    thresholds = np.linspace(0,0.9,num=10)
+    thresholds = np.linspace(0,0.99,num=100)
     import matplotlib.pyplot as plt
     TNR = []
     TPR = []
