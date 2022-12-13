@@ -33,7 +33,7 @@ class Config():
     # Test hyper-parameters and settings
     test_model = 'BiT'
     test_dir = r'C:\Users\Noam\PycharmProjects\Jubaan\logs\12_12_2022____09_32_31-BiT'
-    test_best_model = 'Best_BiT.pth'
+    test_best_model = 'Best_model.pth'
     test_sigmoid_threshold = 0.2
     test_batch_size = 5000
 
